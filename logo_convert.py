@@ -4,19 +4,22 @@ import glob
 
 
 def convert_image(input_image, output_image, output_size=(96, 96), border=4):
-    # Calculate the inner circle diameter, leaving space for the border
-    inner_diameter = output_size[0] - 2 * border
+    # Scale factor for rendering at higher resolution
+    scale_factor = 4
+    scaled_size = (output_size[0] * scale_factor,
+                   output_size[1] * scale_factor)
+    inner_diameter = scaled_size[0] - 2 * border * scale_factor
 
     # Open the input image
     img = Image.open(input_image).convert("RGBA")
 
-    # Create a circular mask
+    # Resize the image to fit within the inner circle while maintaining aspect ratio
+    img.thumbnail((inner_diameter, inner_diameter), Image.Resampling.LANCZOS)
+
+    # Create a circular mask at the higher resolution
     mask = Image.new("L", (inner_diameter, inner_diameter), 0)
     draw = ImageDraw.Draw(mask)
     draw.ellipse((0, 0, inner_diameter, inner_diameter), fill=255)
-
-    # Resize the image to fit within the inner circle while maintaining aspect ratio
-    img.thumbnail((inner_diameter, inner_diameter), Image.Resampling.LANCZOS)
 
     # Calculate the position to paste the image on the mask to center it
     paste_position = (
@@ -32,12 +35,17 @@ def convert_image(input_image, output_image, output_size=(96, 96), border=4):
         circular_img, Image.new("RGBA", circular_img.size), mask)
 
     # Create a new image with a transparent background to add the border
-    final_img = Image.new("RGBA", output_size, (255, 255, 255, 0))
-    final_img.paste(circular_img, (border, border), circular_img)
+    final_img = Image.new("RGBA", scaled_size, (255, 255, 255, 0))
+    final_img.paste(circular_img, (border * scale_factor,
+                    border * scale_factor), circular_img)
 
     # Draw a white circle to act as the outer border
     draw = ImageDraw.Draw(final_img)
-    draw.ellipse((0, 0) + output_size, outline="white", width=border)
+    draw.ellipse((0, 0) + scaled_size, outline="white",
+                 width=border * scale_factor)
+
+    # Downscale the final image to the desired size
+    final_img = final_img.resize(output_size, Image.Resampling.LANCZOS)
 
     # Save the final image
     img_format = output_image.split('.')[-1].upper()
