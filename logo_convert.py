@@ -22,7 +22,8 @@ def convert_image(input_image, output_image, output_size=(96, 96), border=4):
     img = img.resize(new_size, Image.Resampling.LANCZOS)
 
     # Create a final image with a transparent background
-    final_img = Image.new("RGBA", output_size, (255, 255, 255, 0))
+    final_img = Image.new("RGBA", output_size,
+                          (255, 255, 255, 0))  # Transparent
 
     # Calculate position to paste the resized image on the final image
     paste_position = ((output_size[0] - new_size[0]) //
