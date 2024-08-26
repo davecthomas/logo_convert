@@ -18,18 +18,33 @@ If you don't already have Python installed, follow the steps below:
 
    If you see a version number (e.g., `Python 3.x.x`), Python is already installed.
 
-2. **Installing Python on macOS/Linux**:
+2. **Installing Python on macOS**:
+
+   - If you don't have Python installed, you can use Homebrew to install it.
+   - First, check if Homebrew is installed:
+     ```bash
+     brew --version
+     ```
+   - If Homebrew is not installed, install it with:
+     ```bash
+     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+     ```
+   - Then, install Python:
+     ```bash
+     brew install python
+     ```
+
+3. **Installing Python on Ubuntu/Linux**:
 
    - Open a terminal and install Python using a package manager:
-
      ```bash
-     # For macOS
-     brew install python
-
-     # For Ubuntu/Linux
      sudo apt-get update
      sudo apt-get install python3
      ```
+
+4. **Installing Python on Windows**:
+   - Download the latest version of Python from the [official Python website](https://www.python.org/downloads/).
+   - Run the installer and make sure to check the box that says "Add Python to PATH" before clicking "Install Now."
 
 ## Install
 
