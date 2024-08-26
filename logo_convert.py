@@ -4,48 +4,44 @@ import glob
 
 
 def convert_image(input_image, output_image, output_size=(96, 96), border=4):
-    # Scale factor for rendering at higher resolution
-    scale_factor = 4
-    scaled_size = (output_size[0] * scale_factor,
-                   output_size[1] * scale_factor)
-    inner_diameter = scaled_size[0] - 2 * border * scale_factor
+    # Calculate the maximum diameter available for the image inside the circle
+    max_diameter = output_size[0] - 2 * border
 
     # Open the input image
     img = Image.open(input_image).convert("RGBA")
 
-    # Resize the image to fit within the inner circle while maintaining aspect ratio
-    img.thumbnail((inner_diameter, inner_diameter), Image.Resampling.LANCZOS)
+    # Calculate the larger dimension (width or height)
+    img_w, img_h = img.size
+    larger_dimension = max(img_w, img_h)
 
-    # Create a circular mask at the higher resolution
-    mask = Image.new("L", (inner_diameter, inner_diameter), 0)
+    # Scale the image so that the larger dimension is 8 pixels narrower than the max diameter
+    scale = (max_diameter - 8) / larger_dimension
+
+    # Resize the image proportionally
+    new_size = (int(img_w * scale), int(img_h * scale))
+    img = img.resize(new_size, Image.Resampling.LANCZOS)
+
+    # Create a final image with a transparent background
+    final_img = Image.new("RGBA", output_size, (255, 255, 255, 0))
+
+    # Calculate position to paste the resized image on the final image
+    paste_position = ((output_size[0] - new_size[0]) //
+                      2, (output_size[1] - new_size[1]) // 2)
+    final_img.paste(img, paste_position, img)
+
+    # Create a circular mask at the output size
+    mask = Image.new("L", output_size, 0)
     draw = ImageDraw.Draw(mask)
-    draw.ellipse((0, 0, inner_diameter, inner_diameter), fill=255)
+    draw.ellipse(
+        (border, border, output_size[0] - border, output_size[1] - border), fill=255)
 
-    # Calculate the position to paste the image on the mask to center it
-    paste_position = (
-        (inner_diameter - img.size[0]) // 2,
-        (inner_diameter - img.size[1]) // 2
-    )
+    # Apply the circular mask to the final image
+    final_img.putalpha(mask)
 
-    # Apply the mask to the image
-    circular_img = Image.new(
-        "RGBA", (inner_diameter, inner_diameter), (255, 255, 255, 0))
-    circular_img.paste(img, paste_position, img)
-    circular_img = Image.composite(
-        circular_img, Image.new("RGBA", circular_img.size), mask)
-
-    # Create a new image with a transparent background to add the border
-    final_img = Image.new("RGBA", scaled_size, (255, 255, 255, 0))
-    final_img.paste(circular_img, (border * scale_factor,
-                    border * scale_factor), circular_img)
-
-    # Draw a white circle to act as the outer border
+    # Draw a white border around the circle
     draw = ImageDraw.Draw(final_img)
-    draw.ellipse((0, 0) + scaled_size, outline="white",
-                 width=border * scale_factor)
-
-    # Downscale the final image to the desired size
-    final_img = final_img.resize(output_size, Image.Resampling.LANCZOS)
+    draw.ellipse((border, border, output_size[0] - border,
+                 output_size[1] - border), outline="white", width=border)
 
     # Save the final image
     img_format = output_image.split('.')[-1].upper()
